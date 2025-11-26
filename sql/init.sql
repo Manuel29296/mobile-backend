@@ -37,3 +37,12 @@ CREATE INDEX IF NOT EXISTS idx_asist_fecha ON asistencias(fecha);
 
 
 CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  refresh_token TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  revoked_at TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);

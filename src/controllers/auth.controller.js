@@ -12,7 +12,14 @@ const sign = (user) =>
 
 export const register = async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ message: "Datos inválidos" });
+  if (!parsed.success) {
+    // Si la validación falla, devuelve el detalle del error
+    const errors = parsed.error.format();
+    return res.status(400).json({
+      message: "Datos inválidos",
+      errors: errors // Aquí se incluirán los detalles de la validación
+    });
+  }
 
   const { username, password, fullname } = parsed.data;
   const existing = await findByUsername(username);
@@ -23,6 +30,7 @@ export const register = async (req, res) => {
 
   return res.status(201).json({ message: "Usuario creado", user });
 };
+
 
 export const login = async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
