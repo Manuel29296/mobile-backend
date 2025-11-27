@@ -1,72 +1,138 @@
 // session.controller.js
 
-import { createSessionInDB, fetchSessionsFromDB, updateSessionInDB, deleteSessionFromDB } from "../models/sessions.model.js";
+import {
+  createSessionInDB,
+  fetchSessionsFromDB,
+  updateSessionInDB,
+  deleteSessionFromDB,
+  getSessionByUserId,
+  fetchSessionByIdFromDB,
+} from "../models/sessions.model.js";
 
 // Crear una nueva sesión
-
 export const createSession = async (req, res) => {
-  const { userId, refreshToken, sessionDate, sessionName } = req.body;
-
-  // Validación para asegurarse de que todos los campos son proporcionados
-  if (!userId || !refreshToken || !sessionDate || !sessionName) {
-    return res.status(400).json({ message: "El userId, refreshToken, sessionDate y sessionName son obligatorios" });
-  }
-
   try {
-    const newSession = await createSessionInDB(userId, refreshToken, sessionDate, sessionName);  // Pasamos sessionName aquí
-    res.status(201).json({ message: "Sesión creada", session: newSession });
+    const {
+      title,
+      description = null,
+      starts_at,
+      ends_at,
+      youtube_video_id = null, // por ahora lo ignoramos en el modelo
+    } = req.body;
+
+    if (!title || !starts_at || !ends_at) {
+      return res
+        .status(400)
+        .json({ message: "title, starts_at y ends_at son obligatorios" });
+    }
+
+    const data = {
+      title,
+      description,
+      starts_at,
+      ends_at,
+      youtube_video_id,
+    };
+
+    // 👇 CLAVE: pasamos primero el userId, luego el payload
+    const userId = req.user?.id; // asegúrate de tener auth middleware
+    const newSession = await createSessionInDB(userId, data);
+    return res.status(201).json(newSession);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error al crear la sesión" });
+    console.error("Error al crear la sesión:", error);
+    return res.status(500).json({ message: "Error al crear la sesión" });
   }
 };
 
-
-// Obtener todas las sesiones
+// Obtener todas las sesiones del usuario autenticado
 export const getSessions = async (req, res) => {
   try {
-    const sessions = await fetchSessionsFromDB();
-    res.status(200).json(sessions);
+    const userId = req.user?.id;
+    const sessions = await fetchSessionsFromDB(userId);
+    return res.status(200).json(sessions);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error al obtener las sesiones" });
+    console.error("Error al obtener las sesiones:", error);
+    return res.status(500).json({ message: "Error al obtener las sesiones" });
   }
 };
 
-// Obtener sesiones por user_id
+// Obtener una sesión por id (detalle: /api/sessions/:id)
+export const getSessionById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const userId = req.user?.id;
+    const session = await fetchSessionByIdFromDB(userId, id);
+
+    if (!session) {
+      return res.status(404).json({ message: "Sesión no encontrada" });
+    }
+
+    return res.status(200).json(session);
+  } catch (error) {
+    console.error("Error al obtener la sesión:", error);
+    return res.status(500).json({ message: "Error al obtener la sesión" });
+  }
+};
+
+// (Opcional) Obtener sesiones por usuario específico (no autenticado)
 export const getSessionByUser = async (req, res) => {
   const { userId } = req.params;
 
   try {
     const sessions = await getSessionByUserId(userId);
-    if (sessions.length === 0) {
-      return res.status(404).json({ message: "No se encontraron sesiones para este usuario" });
+
+    if (!sessions || sessions.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No se encontraron sesiones para este usuario" });
     }
-    res.status(200).json(sessions);
+
+    return res.status(200).json(sessions);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error al obtener la sesión del usuario" });
+    console.error("Error al obtener sesiones del usuario:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al obtener sesiones del usuario" });
   }
 };
 
 // Actualizar una sesión
 export const updateSession = async (req, res) => {
   const { id } = req.params;
-  const { sessionName, sessionDate } = req.body;
+  const {
+    title,
+    description = null,
+    starts_at,
+    ends_at,
+    youtube_video_id = null,
+  } = req.body;
 
-  if (!sessionName || !sessionDate) {
-    return res.status(400).json({ message: "Todos los campos son obligatorios" });
+  if (!title || !starts_at || !ends_at) {
+    return res
+      .status(400)
+      .json({ message: "title, starts_at y ends_at son obligatorios" });
   }
 
   try {
-    const updatedSession = await updateSessionInDB(id, sessionName, sessionDate);
+    const userId = req.user?.id;
+
+    const updatedSession = await updateSessionInDB(userId, id, {
+      title,
+      description,
+      starts_at,
+      ends_at,
+      youtube_video_id,
+    });
+
     if (!updatedSession) {
       return res.status(404).json({ message: "Sesión no encontrada" });
     }
-    res.status(200).json({ message: "Sesión actualizada", session: updatedSession });
+
+    return res.status(200).json(updatedSession);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error al actualizar la sesión" });
+    console.error("Error al actualizar la sesión:", error);
+    return res.status(500).json({ message: "Error al actualizar la sesión" });
   }
 };
 
@@ -75,13 +141,16 @@ export const deleteSession = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const deletedSession = await deleteSessionFromDB(id);
+    const userId = req.user?.id;
+    const deletedSession = await deleteSessionFromDB(userId, id);
+
     if (!deletedSession) {
       return res.status(404).json({ message: "Sesión no encontrada" });
     }
-    res.status(200).json({ message: "Sesión eliminada" });
+
+    return res.status(200).json({ message: "Sesión eliminada" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error al eliminar la sesión" });
+    console.error("Error al eliminar la sesión:", error);
+    return res.status(500).json({ message: "Error al eliminar la sesión" });
   }
 };

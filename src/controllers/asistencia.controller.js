@@ -43,10 +43,10 @@ export const createAsistenciaCtrl = async (req, res) => {
 
 export const listAsistenciasCtrl = async (req, res) => {
 	const filtros = {
-		desde: req.query.desde, // YYYY-MM-DD
-		hasta: req.query.hasta, // YYYY-MM-DD
-		curso: req.query.curso, // substring match
+		sessionId: req.query.sessionId,
+		personId: req.query.personId,
 	};
+
 
 	// Lógica temporal para pruebas con usuario y cédula simulada
 	const pruebaEmail = 'prueba@gmail.com';

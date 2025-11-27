@@ -1,27 +1,31 @@
 import { pool } from "../db/pool.js";
 
-export async function createAsistencia(userId, { fecha, curso, estado = "PRESENTE", observacion = null }) {
+export async function createAsistencia(
+  userId,
+  { sessionId, personId, estado = "PRESENTE", observacion = null }
+) {
   const { rows } = await pool.query(
-    `INSERT INTO asistencias (user_id, fecha, curso, estado, observacion)
-     VALUES ($1,$2,$3,$4,$5)
+    `INSERT INTO asistencias (user_id, session_id, person_id, estado, observacion)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [userId, fecha, curso, estado, observacion]
+    [userId, sessionId, personId, estado, observacion]
   );
   return rows[0];
 }
 
-export async function listAsistencias(userId, { desde, hasta, curso }) {
+
+
+export async function listAsistencias(userId, { sessionId, personId }) {
   const conds = ["user_id = $1"];
   const vals = [userId];
   let i = 2;
 
-  if (desde) { conds.push(`fecha >= $${i++}`); vals.push(desde); }
-  if (hasta) { conds.push(`fecha <= $${i++}`); vals.push(hasta); }
-  if (curso) { conds.push(`curso ILIKE $${i++}`); vals.push(`%${curso}%`); }
+  if (sessionId) { conds.push(`session_id = $${i++}`); vals.push(sessionId); }
+  if (personId)  { conds.push(`person_id = $${i++}`);  vals.push(personId); }
 
-  const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
+  const where = `WHERE ${conds.join(" AND ")}`;
   const { rows } = await pool.query(
-    `SELECT * FROM asistencias ${where} ORDER BY fecha DESC, created_at DESC`,
+    `SELECT * FROM asistencias ${where} ORDER BY created_at DESC`,
     vals
   );
   return rows;
