@@ -1,39 +1,110 @@
-# Backend Asistencias (Node.js + Express + PostgreSQL)
+# Mobile Backend
 
-API sencilla para una app de **asistencias**:
-- Registro e inicio de sesión (JWT simple, sin verificación de correo)
-- CRUD de **asistencias**
-- Validación básica con Zod
-- **Base de datos en la nube** (PostgreSQL con SSL)
+Este es el backend para la aplicación móvil, construido con Node.js y Express. Proporciona funcionalidades básicas como autenticación, gestión de tareas, sesiones y asistencia.
 
----
+![Diagrama entidad Relación](assets/diagramaEntidadRelacio.png)
+
+
+## Características
+
+- **Autenticación JWT** para seguridad.
+- **Conexión con base de datos PostgreSQL**.
+- CRUD para tareas, sesiones y registros de asistencia.
+- Uso de **Zod** para validaciones de datos.
+- **CORS** habilitado para solicitudes desde diferentes orígenes.
 
 ## Requisitos
-- Node.js 18+ (recomendado 20+)
-- Conexión a Internet (DB en la nube)
-- Archivo `.env` con la URL de la base de datos **(incluye sslmode=require)**
 
-Ejemplo de `.env`:
+Antes de ejecutar el backend, asegúrate de tener lo siguiente:
 
-PORT=4000
-DATABASE_URL=postgresql://usuario:password@host.neon.tech/base?sslmode=require
-JWT_SECRET=cambia-esto
-JWT_EXPIRES_IN=1h
+- **Node.js** (versión >= 16.x).
+- **PostgreSQL** configurado y corriendo.
+- Dependencias del proyecto instaladas.
+
+## Instalación
+
+1. Clona este repositorio:
+   ```bash
+   git clone <https://github.com/Manuel29296/mobile-backend>
+   cd mobile-backend
 
 
-> No necesitas instalar PostgreSQL localmente.
+## Instala las dependencias:
 
----
-
-## Instalación y ejecución
-
-```bash
-# 1) Instalar dependencias
 npm install
 
-# 2) Crear tablas en la base de datos (nube)
+## Crea la base de datos y tablas:
+
+npm run db:create
 npm run db:init
 
-# 3) Levantar el servidor en modo desarrollo
-npm run dev
-# Servirá en http://localhost:4000
+
+## Estructura del proyecto
+- src/
+  - index.ts                — Punto de entrada (inicia el servidor)
+  - app.ts                  — Configuración de Express / middlewares
+  - controllers/            — Lógica de controladores por recurso
+  - routes/                 — Definición de rutas
+  - services/               — Lógica de negocio / acceso a datos
+  - models/                 — Esquemas / modelos (ORM / Mongoose)
+  - middlewares/            — Autenticación, validación, manejo de errores
+  - config/                 — Configuración (env, constantes)
+  - utils/                  — Helpers, utilidades
+- tests/                    — Tests unitarios / integración
+- docs/                     — Documentación adicional / OpenAPI
+- .env.example              — Variables de entorno de ejemplo
+- package.json
+- tsconfig.json
+- README.md
+
+
+## Endpoints principales
+Base: /api
+
+- Salud
+  - GET /api/health
+    - Descripción: Estado del servicio
+    - Auth: no
+
+- Autenticación
+  - POST /api/auth/register
+    - Body: { "email", "password", "name" }
+    - Respuesta: 201 { "user", "token" }
+    - Auth: no
+  - POST /api/auth/login
+    - Body: { "email", "password" }
+    - Respuesta: 200 { "user", "token" }
+    - Auth: no
+  - GET /api/auth/profile
+    - Descripción: Perfil del usuario autenticado
+    - Auth: Bearer 
+    
+    - Usuarios
+  - GET /api/users
+    - Descripción: Listar usuarios (paginado)
+    - Auth: Bearer (roles según implementación)
+  - GET /api/users/:id
+    - Descripción: Obtener usuario por id
+    - Auth: Bearer
+  - PUT /api/users/:id
+    - Body: campos actualizables
+    - Auth: Bearer (propio usuario o admin)
+  - DELETE /api/users/:id
+    - Auth: Bearer (admin)
+
+- Recursos (ej. items)
+  - GET /api/items
+    - Listado público o protegido según caso
+  - POST /api/items
+    - Crear recurso
+    - Auth: Bearer
+  - GET /api/items/:id
+  - PUT /api/items/:id
+    - Auth: Bearer (propietario/admin)
+  - DELETE /api/items/:id
+    - Auth: Bearer (propietario/admin)
+
+    - Uploads (opcional)
+  - POST /api/upload
+    - FormData file
+    - Auth: Bearer
