@@ -4,7 +4,7 @@ Este es el backend para la aplicación móvil, construido con Node.js y Express.
 
 ![Diagrama entidad Relación](assets/diagramaEntidadRelacio.png)
 
-
+# Link front-end: https://github.com/GuzGuz0208/App_Asistencia 
 ## Características
 
 - **Autenticación JWT** para seguridad.
